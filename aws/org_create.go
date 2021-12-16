@@ -14,7 +14,7 @@ import (
 // NewOrgProof creates a proof of AWS organisation to be verified.
 // The proof consists of an AWS Signature V4 over the DescribeOrganization API call.
 // A verifier can then use the signature to call the AWS Organizations API and determine the identity of the claimant.
-func NewOrgProof(ctx context.Context, opts ...ProofOption) (*OrganisationProof, error) {
+func NewOrgProof(ctx context.Context, opts ...ProofOption) (*OrganizationProof, error) {
 	var o ProveOptions
 
 	// by default set the time to be now
@@ -55,7 +55,7 @@ func NewOrgProof(ctx context.Context, opts ...ProofOption) (*OrganisationProof, 
 	req.Header.Set("X-Amz-Target", "AWSOrganizationsV20161128.DescribeOrganization")
 	req.Header.Del("Transfer-Encoding")
 
-	proof := OrganisationProof{
+	proof := OrganizationProof{
 		Signature:     req.Header.Get("Authorization"),
 		Time:          o.time,
 		SecurityToken: req.Header.Get("X-Amz-Security-Token"),

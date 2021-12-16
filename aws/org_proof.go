@@ -26,9 +26,9 @@ type AvailablePolicyType struct {
 	Type   string
 }
 
-// OrganisationProof is created by a claimant who wishes
+// OrganizationProof is created by a claimant who wishes
 // to prove their AWS organization to a prover.
-type OrganisationProof struct {
+type OrganizationProof struct {
 	// Signature is the AWS Signature Version 4 Authorization header (https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html).
 	Signature string `json:"signature"`
 	// Time is the time that the signature was created.
@@ -39,7 +39,7 @@ type OrganisationProof struct {
 
 // Verify calls the AWS STS API to verify the contents of the identity proof provided by the claimant.
 // If successful, a verified Identity object is returned.
-func (op OrganisationProof) Verify(ctx context.Context, opts ...IdentityVerifyOption) (*Organization, error) {
+func (op OrganizationProof) Verify(ctx context.Context, opts ...IdentityVerifyOption) (*Organization, error) {
 	var o IdentityVerifyOptions
 	o.useragent = "commonfate-cloudproof/0.1.0"
 	o.client = &http.Client{}
