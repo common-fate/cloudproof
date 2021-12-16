@@ -76,7 +76,7 @@ func NewIdentityProof(ctx context.Context, opts ...ProofOption) (*IdentityProof,
 	req.Header.Del("Transfer-Encoding")
 
 	proof := IdentityProof{
-		AuthHeader:    req.Header.Get("Authorization"),
+		Signature:     req.Header.Get("Authorization"),
 		Time:          o.time,
 		SecurityToken: req.Header.Get("X-Amz-Security-Token"),
 	}

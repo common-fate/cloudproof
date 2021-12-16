@@ -22,8 +22,8 @@ type Identity struct {
 // IdentityProof is created by a claimant who wishes
 // to prove their AWS identity to a prover.
 type IdentityProof struct {
-	// AuthHeader is the AWS Signature Version 4 Authorization header (https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html).
-	AuthHeader string `json:"authHeader"`
+	// Signature is the AWS Signature Version 4 Authorization header (https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html).
+	Signature string `json:"signature"`
 	// Time is the time that the signature was created.
 	Time time.Time `json:"time"`
 	// SecurityToken is the AWS Session Token associated with the signature.
@@ -65,7 +65,7 @@ func (ip IdentityProof) Verify(ctx context.Context, opts ...IdentityVerifyOption
 	req.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
 	req.Header.Set("X-Amz-Security-Token", ip.SecurityToken)
 	req.Header.Set("X-Amz-Date", ip.Time.UTC().Format("20060102T150405Z"))
-	req.Header.Set("Authorization", ip.AuthHeader)
+	req.Header.Set("Authorization", ip.Signature)
 	req.Header.Del("Transfer-Encoding")
 
 	resp, err := o.client.Do(req)

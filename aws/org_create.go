@@ -56,7 +56,7 @@ func NewOrgProof(ctx context.Context, opts ...ProofOption) (*OrganisationProof, 
 	req.Header.Del("Transfer-Encoding")
 
 	proof := OrganisationProof{
-		AuthHeader:    req.Header.Get("Authorization"),
+		Signature:     req.Header.Get("Authorization"),
 		Time:          o.time,
 		SecurityToken: req.Header.Get("X-Amz-Security-Token"),
 	}
