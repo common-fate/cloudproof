@@ -18,14 +18,6 @@ The claimant generates a signed AWS STS `GetCallerIdentity` API call and constru
 
 The verifier verifies the proof by **calling** the AWS STS API with the timestamp, signature and session token provided by the claimant. AWS STS returns the claimant's identity.
 
-The proved identity consists of
-
-### AWS STS
-
-The claimant generates a signed AWS STS `GetCallerIdentity` API call and constructs a proof consisting of the timestamp, signature, and session token.
-
-The verifier verifies the proof by **calling** the AWS STS API with the timestamp, signature and session token provided by the claimant. AWS STS returns the claimant's identity.
-
 The proved identity consists of an `ARN`, a `UserID`, and an `Account`.
 
 ### AWS Organization
