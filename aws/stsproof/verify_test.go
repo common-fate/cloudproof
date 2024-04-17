@@ -1,30 +1,16 @@
-package aws
+package stsproof
 
 import (
 	"context"
-	"io"
 	"net/http"
-	"strings"
+	"net/http/httptest"
 	"testing"
 )
 
-type MockClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
-	if m.DoFunc != nil {
-		return m.DoFunc(req)
-	}
-	return &http.Response{}, nil
-}
-
 func TestVerify(t *testing.T) {
-	ip := IdentityProof{}
-
-	mc := MockClient{
-		DoFunc: func(req *http.Request) (*http.Response, error) {
-			body := `
+	ip := Proof{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := `
 <GetCallerIdentityResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/">
   <GetCallerIdentityResult>
     <Arn>arn:aws:sts::123456789012:assumed-role/test-role/test-session</Arn>
@@ -35,21 +21,15 @@ func TestVerify(t *testing.T) {
     <RequestId>00000</RequestId>
   </ResponseMetadata>
 </GetCallerIdentityResponse>
-			`
-			header := http.Header{}
-			header.Set("Content-Type", "application/xml")
-
-			res := &http.Response{
-				StatusCode: 200,
-				Body:       io.NopCloser(strings.NewReader(body)),
-				Header:     header,
-			}
-			return res, nil
-		},
-	}
+		`
+		w.Header().Set("Content-Type", "application/xml")
+		_, _ = w.Write([]byte(body))
+	}))
 
 	ctx := context.Background()
-	id, err := ip.Verify(ctx, WithClient(&mc))
+	id, err := ip.VerifyWithOpts(ctx, VerifyOpts{
+		URL: srv.URL,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

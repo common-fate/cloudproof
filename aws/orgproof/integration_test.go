@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package aws
+package orgproof
 
 import (
 	"context"
