@@ -1,4 +1,4 @@
-package aws
+package stsproof
 
 import (
 	"context"
@@ -16,35 +16,43 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
-type ProveOptions struct {
-	cfg       *aws.Config
-	time      time.Time
-	useragent string
+type Opts struct {
+	// AWSConfig allows the AWS config to be overridden.
+	// If not specified, the New() method will call
+	// 'config.LoadDefaultConfig()' to obtain the default
+	// AWS config.
+	AWSConfig *aws.Config
+	// Time allows the current time to be overridden.
+	// If left unspecified the current time is used.
+	// This is used for testing, so most of the time
+	// you shouldn't need to change this.
+	Time time.Time
 }
 
-type ProofOption = func(*ProveOptions)
-
-// NewIdentityProof creates a proof of AWS identity to be verified.
+// New creates a proof of AWS identity to be verified.
 // The proof consists of an AWS Signature V4 over the STS GetCallerIdentity API call.
 // A verifier can then use the signature to call the AWS STS API and determine the identity of the claimant.
-func NewIdentityProof(ctx context.Context, opts ...ProofOption) (*IdentityProof, error) {
-	var o ProveOptions
+func New(ctx context.Context) (*Proof, error) {
+	return NewWithOpts(ctx, Opts{})
+}
 
-	// by default set the time to be now
-	o.time = time.Now()
-	o.useragent = "commonfate-cloudattest/0.1.0"
-
-	for _, opt := range opts {
-		opt(&o)
+// NewWithOpts creates a proof of AWS identity to be verified, allowing additional options to be specified.
+// The proof consists of an AWS Signature V4 over the STS GetCallerIdentity API call.
+// A verifier can then use the signature to call the AWS STS API and determine the identity of the claimant.
+func NewWithOpts(ctx context.Context, opts Opts) (*Proof, error) {
+	if opts.Time.IsZero() {
+		opts.Time = time.Now()
 	}
 
+	userAgent := "cloudproof-go/0.1.0"
+
 	// create a default config if it hasn't been provided by the WithConfig() option
-	if o.cfg == nil {
+	if opts.AWSConfig == nil {
 		cfg, err := config.LoadDefaultConfig(ctx)
 		if err != nil {
 			return nil, err
 		}
-		o.cfg = &cfg
+		opts.AWSConfig = &cfg
 	}
 
 	// build the AWS STS API call to sign over.
@@ -54,9 +62,9 @@ func NewIdentityProof(ctx context.Context, opts ...ProofOption) (*IdentityProof,
 
 	req, _ := http.NewRequest("POST", "https://sts.amazonaws.com/", strings.NewReader(data.Encode()))
 
-	req.Header.Set("User-Agent", o.useragent)
+	req.Header.Set("User-Agent", userAgent)
 
-	creds, err := o.cfg.Credentials.Retrieve(ctx)
+	creds, err := opts.AWSConfig.Credentials.Retrieve(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +73,7 @@ func NewIdentityProof(ctx context.Context, opts ...ProofOption) (*IdentityProof,
 	_, _ = io.Copy(h, strings.NewReader(data.Encode()))
 	payloadHash := hex.EncodeToString(h.Sum(nil))
 	s := signer.NewSigner()
-	err = s.SignHTTP(ctx, creds, req, payloadHash, "sts", "us-east-1", o.time)
+	err = s.SignHTTP(ctx, creds, req, payloadHash, "sts", "us-east-1", opts.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -75,32 +83,11 @@ func NewIdentityProof(ctx context.Context, opts ...ProofOption) (*IdentityProof,
 	req.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
 	req.Header.Del("Transfer-Encoding")
 
-	proof := IdentityProof{
+	proof := Proof{
 		Signature:     req.Header.Get("Authorization"),
-		Time:          o.time,
+		Time:          opts.Time,
 		SecurityToken: req.Header.Get("X-Amz-Security-Token"),
 	}
 
 	return &proof, nil
-}
-
-// WithConfig allows overriding the default AWS config
-func WithConfig(cfg *aws.Config) func(p *ProveOptions) {
-	return func(p *ProveOptions) {
-		p.cfg = cfg
-	}
-}
-
-// WithTime allows a custom signature time to be provided
-func WithTime(t time.Time) func(p *ProveOptions) {
-	return func(p *ProveOptions) {
-		p.time = t
-	}
-}
-
-// WithUserAgent allows a custom user agent to be provided.
-func WithUserAgent(ua string) func(p *ProveOptions) {
-	return func(p *ProveOptions) {
-		p.useragent = ua
-	}
 }
