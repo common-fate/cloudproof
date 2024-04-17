@@ -23,7 +23,7 @@ func TestVerify(t *testing.T) {
 </GetCallerIdentityResponse>
 		`
 		w.Header().Set("Content-Type", "application/xml")
-		w.Write([]byte(body))
+		_, _ = w.Write([]byte(body))
 	}))
 
 	ctx := context.Background()
