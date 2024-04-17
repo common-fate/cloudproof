@@ -50,7 +50,7 @@ func main() {
 	// construct a proof
 	proof, err := stsproof.New(ctx)
 	if err != nil {
-			log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	// verify the proof (usually you'd do this elsewhere, like on a server)
